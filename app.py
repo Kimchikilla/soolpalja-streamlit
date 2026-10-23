@@ -249,7 +249,13 @@ def results():
             st.subheader(heading)
             st.write(profile_report[key])
     else:
-        st.info('분석을 먼저 작성하는 새 흐름이 적용됐습니다. 다시 시작하면 새 분석을 볼 수 있습니다.')
+        st.info('새 분석 흐름이 적용됐습니다. 기존 입력으로 새 결과를 생성할 수 있습니다.')
+        if picks:
+            if st.button('새 분석 보기', type='primary', width='stretch'):
+                state.pop('recommendations', None)
+                state.pop('profile_report', None)
+                step(5)
+            return
     st.divider()
     st.subheader('사주와 MBTI에 따른 술 추천')
     if result.get('search_timeline'):

@@ -31,7 +31,9 @@ def restore_deployment_index():
     cfg = config()
     names = [cfg['collection_meta'], cfg['collection_docs'], cfg.get('collection_saju', 'saju_reference')]
     existing = {c.name: c for c in client.list_collections()}
-    if all(name in existing and existing[name].count() for name in names):
+    digest = hashlib.sha256(bundle.read_bytes()).hexdigest()
+    marker = chroma_path() / 'deployment-bundle.sha256'
+    if marker.exists() and marker.read_text() == digest and all(name in existing and existing[name].count() for name in names):
         return False
     with gzip.open(bundle, 'rt', encoding='utf-8') as source:
         payload = json.load(source)
@@ -41,6 +43,7 @@ def restore_deployment_index():
             batch = collection['entries'][start:start + 64]
             target.upsert(ids=[e['id'] for e in batch], documents=[e['document'] for e in batch],
                           metadatas=[e['metadata'] for e in batch], embeddings=[e['embedding'] for e in batch])
+    marker.write_text(digest)
     return True
 
 
@@ -56,7 +59,10 @@ def index_counts():
 
 
 def metadata(item):
-    return {'item_id': item['id'], 'title': item['name'], 'category': item['category'], 'item_kind': item.get('item_kind', 'drink_style'), 'source_url': item['source_url'], 'source_type': '항목 메타데이터', 'license': item['license']}
+    info = {'item_id': item['id'], 'title': item['name'], 'category': item['category'], 'item_kind': item.get('item_kind', 'drink_style'), 'source_url': item['source_url'], 'source_type': '항목 메타데이터', 'license': item['license']}
+    if item.get('origin'):
+        info['origin'] = item['origin']
+    return info
 
 
 def saju_store():

@@ -1,7 +1,14 @@
 # 술 팔자
 
-MBTI와 사주로 성격과 닮은 술을 찾습니다. 성향 해석부터 술의 특징까지 확인해보세요.
+MBTI와 사주를 먼저 분석하고, 문서 근거를 바탕으로 술을 추천하는 서비스입니다.
 
-실행: `streamlit run app.py`
+**홈페이지: [soolpalja.vercel.app](https://soolpalja.vercel.app/)**
 
-주류 330개, 설명 문서 청크 1018개, 사주 참고 문서 청크 154개를 공개 자료에서 수집했다. 메타데이터는 Wikidata CC0, 문서는 Wikipedia contributors CC BY-SA 4.0이며 각 항목에 원문과 리비전·라이선스가 포함된다. 배포 번들은 사용자 입력이나 API 키를 포함하지 않는다.
+[Streamlit 바로가기](https://gdyhofaiuugfmnakccnzdb.streamlit.app/)
+
+- 흐름: 사주 분석 → MBTI 해석 → 종합 성향 → 술 추천·질문
+- 데이터: 주류 337개, 연결 문서 337건, 사주 참고 문서 15개
+- 기술: Python · Streamlit · LangGraph · Chroma · SSAFY GMS
+
+사주·MBTI는 재미용 해석이며, 술 정보는 출처와 함께 제공합니다.
+데이터: Wikidata CC0 · Wikipedia contributors CC BY-SA 4.0 · 제조사 발표 사실 요약.

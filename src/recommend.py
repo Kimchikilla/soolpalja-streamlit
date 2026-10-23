@@ -66,7 +66,12 @@ def recommend(conditions, diagnostics=None, *, persona=None, category=None, on_p
     ids &= set(lookup)
     if default_recommendation:
         ids = {x['id'] for x in catalog if x['id'] in ids} if persona else {x['id'] for x in catalog[:6]}
-        ids = set(sorted(ids, key=lambda i: lookup[i]['sitelinks'], reverse=True)[:10])
+        # Preserve semantic relevance; worldwide article counts buried local products.
+        ranked = list(dict.fromkeys(d.metadata['item_id'] for d in candidates + external if d.metadata['item_id'] in ids))
+        ids = set(ranked[:8]) if persona else ids
+        if persona and not category:
+            domestic = meta.similarity_search(query, k=2, filter={'origin': 'KR'})
+            ids.update(d.metadata['item_id'] for d in domestic if d.metadata['item_id'] in lookup)
     report('candidates', f'1차 후보 {len(ids)}개 검색 완료. 원문을 확인합니다.', names=[lookup[i]['name'] for i in sorted(ids)])
     evidence = []
     for item_id in sorted(ids):
@@ -112,7 +117,7 @@ def recommend(conditions, diagnostics=None, *, persona=None, category=None, on_p
         if diagnostics is not None:
             diagnostics.setdefault('validation', []).append({'id': pick.item_id, 'valid': valid, 'sources': used,
                 'proof_documents': [{'number': p.evidence_number, 'item_id': evidence[p.evidence_number - 1].metadata['item_id'], 'text': evidence[p.evidence_number - 1].page_content} for p in pick.checks if 1 <= p.evidence_number <= len(evidence)]})
-        if pick.item_id in ids and pick.item_id not in seen and used and valid and any(x['source_type'] == 'Wikipedia' for x in used) and all(x['item_id'] == pick.item_id for x in used):
+        if pick.item_id in ids and pick.item_id not in seen and used and valid and any(x['source_type'] in {'Wikipedia', 'Manufacturer'} for x in used) and all(x['item_id'] == pick.item_id for x in used):
             seen.add(pick.item_id)
             output.append({'item': lookup[pick.item_id], 'reason': pick.reason, 'sources': used, 'verified_facts': list(dict.fromkeys(proof.quote for proof in pick.checks))})
     if default_recommendation and not output:
@@ -143,7 +148,7 @@ def validate_pick(pick, plan, evidence):
         if not proof.satisfied or not 1 <= proof.evidence_number <= len(evidence):
             return False
         document = evidence[proof.evidence_number - 1]
-        if document.metadata['item_id'] != pick.item_id or document.metadata['source_type'] != 'Wikipedia':
+        if document.metadata['item_id'] != pick.item_id or document.metadata['source_type'] not in {'Wikipedia', 'Manufacturer'}:
             return False
         quote = ' '.join(proof.quote.split())
         if not quote or quote.casefold() not in ' '.join(document.page_content.split()).casefold():

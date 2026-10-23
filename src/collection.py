@@ -19,6 +19,8 @@ class SelectedTitles(BaseModel):
 
 
 def collect_for_question(item, question):
+    if item.get('document_source_type') == 'Manufacturer':
+        return {'cached': True, 'terms': [], 'titles': [item['document_title']]}
     language = item.get('document_language', 'en')
     own_title = item.get('document_title', item['name_en'])
     endpoint = f'https://{language}.wikipedia.org/w/api.php'
@@ -61,7 +63,9 @@ def collect_for_question(item, question):
         text = page.get('extract', '')
         if not text.strip():
             if title == own_title:
-                raise ValueError('선택한 주류 자체의 문서를 확보하지 못했습니다.')
+                _, existing_store = stores()
+                if not existing_store.get(where={'item_id': item['id']}, limit=1)['ids']:
+                    raise ValueError('선택한 주류 자체의 문서를 확보하지 못했습니다.')
             continue
         revision = page['revisions'][0]['revid']
         info = {'item_id': item['id'], 'title': page['title'], 'source_url': page['fullurl'], 'source_type': 'Wikipedia', 'license': 'CC-BY-SA-4.0', 'revision_url': f'https://{language}.wikipedia.org/w/index.php?oldid={revision}'}

@@ -137,6 +137,7 @@ def wizard():
                     st.error('날짜와 음력·윤달 여부를 확인해주세요. 해당 달력에 없는 날짜는 계산할 수 없습니다.')
                     return
                 state.pop('recommendations', None)
+                state.pop('profile_report', None)
                 step(5)
 
 
@@ -146,12 +147,12 @@ def searching():
     if api_ready():
         try:
             st.subheader('나에게 맞는 술을 찾는 중')
-            st.caption('후보 검색 → 원문 확인 → 성격 해석')
+            st.caption('사주·MBTI 분석 → 후보 검색 → 추천 이유')
             st.caption('진행 바는 단계별 완료 표시이며 남은 시간을 뜻하지 않아요. 작성 중 문구는 최종 검수 전 초안입니다.')
             timeline = []
             meter = st.progress(0, text='술 데이터 검색 중')
             live_draft = st.empty()
-            milestones = {'search': 5, 'candidates': 15, 'evidence': 30, 'selection': 45, 'selected': 60, 'references': 65, 'writing': 75, 'character': 90}
+            milestones = {'analysis': 5, 'search': 20, 'candidates': 30, 'evidence': 40, 'selection': 55, 'selected': 65, 'references': 70, 'writing': 80, 'character': 90}
             with st.status('추천 진행 과정', expanded=True) as status:
                 def report(stage, message, details):
                     if stage == 'draft':
@@ -173,10 +174,14 @@ def searching():
                             st.info(details['roast'])
                 from src.store import restore_deployment_index
                 restore_deployment_index()
+                from src.profile_reading import analyze_persona
+                if 'profile_report' not in state:
+                    state['profile_report'] = analyze_persona(state['persona'], on_progress=report)
                 from src.recommend import recommend
                 from src.reading import attach_readings
-                result = recommend('', persona=state['persona'], category=None, on_progress=report)
-                state['recommendations'] = attach_readings(result, state['persona'], on_progress=report)
+                result = recommend('', persona={**state['persona'], 'description': state['profile_report']['summary']}, category=None, on_progress=report)
+                state['recommendations'] = attach_readings(result, state['persona'], on_progress=report, profile_report=state['profile_report'])
+                state['recommendations']['profile_report'] = state['profile_report']
                 state['recommendations']['search_timeline'] = timeline
                 live_draft.empty()
                 meter.progress(100, text='추천 완료')
@@ -211,27 +216,6 @@ def reading_body(pick, persona):
     if reading:
         st.subheader('추천 이유')
         st.write(reading['connection'])
-        st.subheader('사주로 보는 성향')
-        st.caption('일간·오행·음양을 소재로 한 재미용 해석입니다.')
-        from src.reading import saju_story_for_display
-        for story in saju_story_for_display(reading, persona):
-            st.markdown(f"#### {story['title']}")
-            st.write(story['body'])
-        st.markdown('### 성격 특징')
-        for number, trait in enumerate(reading['personality'], 1):
-            st.markdown(f'<div class="personality-line"><span>{number:02d}</span><p>{escape(trait)}</p></div>', unsafe_allow_html=True)
-        scene, friend = st.columns(2, gap='large')
-        with scene:
-            st.markdown('#### 술자리에서의 모습')
-            st.write(reading['scene'])
-        with friend:
-            st.markdown('#### 잘 맞는 친구 유형')
-            st.write(reading['companion'])
-        with st.expander('MBTI와 사주로 풀어본 캐릭터'):
-            st.markdown(f"**{persona['mbti']} 성격 해석**")
-            st.write(reading['mbti_reading'])
-            st.markdown('**사주에서 가져온 모티브**')
-            st.write(reading['saju_reading'])
     with st.expander('이 술의 실제 특징과 추천 근거'):
         st.write(pick['reason'])
         show_sources(pick['sources'])
@@ -247,6 +231,21 @@ def results():
     for pick in picks:
         if pick.get('reading'):
             pick['reading'] = clean_reading(pick['reading'])
+    st.title('사주·MBTI 분석')
+    st.caption('계산 결과와 전통 개념·MBTI를 소재로 한 재미용 해석입니다.')
+    analysis = persona.get('saju', {})
+    if analysis:
+        st.write(analysis['summary'])
+        st.caption('표면 오행: ' + ' · '.join(f'{key} {value}' for key, value in analysis['element_counts'].items()))
+    profile_report = result.get('profile_report') or state.get('profile_report')
+    if profile_report:
+        for heading, key in [('사주 분석', 'saju_analysis'), ('MBTI 해석', 'mbti_analysis'), ('종합 성향', 'combined_analysis')]:
+            st.subheader(heading)
+            st.write(profile_report[key])
+    else:
+        st.info('분석을 먼저 작성하는 새 흐름이 적용됐습니다. 다시 시작하면 새 분석을 볼 수 있습니다.')
+    st.divider()
+    st.subheader('사주와 MBTI에 따른 술 추천')
     if result.get('search_timeline'):
         with st.expander('방금 어떤 과정을 거쳐 찾았는지 다시 보기'):
             for event in result['search_timeline']:
@@ -268,10 +267,8 @@ def results():
     title = reading.get('type_name', persona['title'])
     tagline = reading.get('tagline', persona['description'])
     st.markdown(f'''<div class="result-hero"><div class="eyebrow">추천 결과 · {escape(persona['mbti'])}</div>
-    <div class="result-type"><b>{escape(title)}</b></div><h1>{escape(main['item']['name'])}</h1>
+    <h1>{escape(main['item']['name'])}</h1>
     <p>{escape(tagline)}</p><div class="result-tag">{escape(category_label(main['item']['category']))} &nbsp; / &nbsp; 성격과 연결한 추천</div></div>''', unsafe_allow_html=True)
-    if reading:
-        st.markdown(f'<div class="roast"><span>한 줄 요약</span><p>“{escape(reading["roast"])}”</p></div>', unsafe_allow_html=True)
     share = f"🥃 술 팔자\n{persona['mbti']} · {title}\n나의 술: {main['item']['name']}\n{tagline}\n{reading.get('roast', '')}\nMBTI·사주를 소재로 한 재미용 캐릭터 해석"
     a, b, c = st.columns(3)
     with a:

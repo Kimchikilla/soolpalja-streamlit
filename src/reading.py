@@ -147,9 +147,23 @@ scene: 성격이 드러나는 구체적인 술자리 행동을 2문장으로 작
 
 def saju_story_for_display(reading, persona):
     """Keep older result sessions readable without another model call."""
-    if reading.get('saju_story'):
-        return reading['saju_story']
     saju = persona.get('saju', {})
+    if reading.get('saju_story'):
+        master = saju.get('day_master', {})
+        image = master.get('image', MOTIFS[persona['element']][0])
+        counts = ' · '.join(f'{key} {value}' for key, value in saju.get('element_counts', {}).items())
+        gods = ' · '.join(dict.fromkeys(row['천간 십신'] for row in saju.get('pillar_details', []) if row['천간 십신'] != '日主'))
+        boundary = ('말수가 적어 의견도 적다고 보기 쉽지만, 동의하지 않는 선택을 일일이 설명하지 않을 뿐인 장면을 떠올릴 수 있습니다. 아무 의견이 없다고 해놓고 결과가 나온 뒤 수정 사항이 늘어나는 식입니다.' if persona['mbti'][0] == 'I' else '먼저 분위기를 만들고 선택을 이끄는 모습 뒤에는, 본인이 원하는 반응을 확인하려는 마음이 숨어 있는 장면을 떠올릴 수 있습니다. 모두의 의견을 물었지만 최종안은 처음 제안과 크게 다르지 않은 식입니다.')
+        control = ('계획을 세우는 습관은 준비성뿐 아니라 결정권을 쉽게 넘기지 않는 장면으로도 읽을 수 있습니다. 다른 선택도 괜찮다고 말한 뒤, 그 선택에 맞춰 조건을 하나씩 추가하는 모습이 관찰 지점입니다.' if persona['mbti'][3] == 'J' else '유연하다는 말과 결정을 미루는 일은 구분할 필요가 있습니다. 즉흥적인 선택을 선호하면서도 정리와 예약은 다른 사람이 해주기를 기다리는 장면이 성격의 반전이 될 수 있습니다.')
+        relation = ('상대의 말을 이해하는 것과 그 말에 동의하는 것을 분리하는 장면으로 읽을 수 있습니다. 공감보다 사실 확인이 먼저 나오면, 대화를 정리한 사람은 본인인데 상대는 아직 대화가 시작되지 않았다고 느낄 수 있습니다.' if persona['mbti'][2] == 'T' else '분위기를 깨지 않으려 불편한 선택까지 받아들이는 장면으로 읽을 수 있습니다. 괜찮다는 대답은 빨랐지만, 나중에 혼자 정리하는 불편의 목록은 길어지는 식입니다.')
+        notes = [
+            f'일간 {persona["element"]}의 이미지인 ‘{image}’를 해석의 출발점으로 삼았습니다. {boundary}',
+            f'이번 계산의 표면 분포는 {counts or "별도 계산표 참조"}입니다. 숫자의 많고 적음은 성격의 우열을 뜻하지 않으며, 서로 다른 행동을 대비하는 소재로 사용했습니다. {control}',
+            f'천간에서 확인한 십신은 {gods or "별도 계산표 참조"}입니다. 전통적인 관계·자기표현의 명칭과 MBTI의 판단 방식을 함께 소재로 사용했습니다. {relation}',
+            '단일 주류는 원료와 숙성 방식, 칵테일은 각 재료의 역할을 기준으로 성격에 비유합니다. 취향이 분명하다는 장점은 선택을 맡기는 순간 고집처럼 보일 수 있고, 쉽게 맞춰주는 태도는 본인의 취향이 드러나지 않는 이유가 될 수도 있습니다. 술의 특징과 함께 이런 두 방향을 비교한 해석입니다.',
+        ]
+        return [{'title': entry['title'], 'body': entry['body'] + (' ' + notes[i % 4] if len(entry['body']) < 160 else '')} for i, entry in enumerate(reading['saju_story'])]
+
     master = saju.get('day_master', {})
     image = master.get('image', MOTIFS[persona['element']][0])
     motif = master.get('motif', MOTIFS[persona['element']][1])

@@ -9,7 +9,7 @@ from src.catalog import load_catalog, load_documents, category_label
 from src.persona import create_persona, LunarDate
 from src.settings import api_ready
 
-st.set_page_config(page_title='술 팔자 · 네 술자리 본성을 까준다', page_icon='🥃', layout='wide', initial_sidebar_state='collapsed')
+st.set_page_config(page_title='술 팔자 · MBTI·사주 기반 주류 추천', page_icon='🥃', layout='wide', initial_sidebar_state='collapsed')
 st.markdown(f'<style>{(Path(__file__).parent / "assets/app.css").read_text(encoding="utf-8")}</style>', unsafe_allow_html=True)
 items, documents = load_catalog(), load_documents()
 lookup = {x['id']: x for x in items}
@@ -116,7 +116,7 @@ def wizard():
             consent_invalid = state.get('consent_invalid', False)
             consent_key = f'consent_required_{consent_attempt}' if consent_invalid else 'consent_normal'
             with st.container(key=consent_key):
-                adult = remember('adult', st.checkbox('성인이며, 재미용 성향 해석임을 확인했어요.', value=saved('adult', False), key='input_adult'))
+                adult = remember('adult', st.checkbox('성인 여부와 재미용 해석임을 확인했습니다.', value=saved('adult', False), key='input_adult'))
             if adult:
                 state['consent_invalid'] = False
 
@@ -125,7 +125,7 @@ def wizard():
                 if st.button('← MBTI 다시 보기', width='stretch'):
                     step(1)
             with forward:
-                submitted = st.button('내 본성까지 까보기 ↗', type='primary', width='stretch')
+                submitted = st.button('추천 결과 보기 ↗', type='primary', width='stretch')
             if submitted:
                 if not adult:
                     state['consent_invalid'] = True
@@ -209,21 +209,20 @@ def saju_details(persona, result):
 def reading_body(pick, persona):
     reading = pick.get('reading')
     if reading:
-        section_label('WHY THIS DRINK IS YOU')
-        st.subheader('왜 하필 이 술이 너냐면.')
+        st.subheader('추천 이유')
         st.write(reading['connection'])
-        st.markdown('### 너는 이런 사람')
+        st.markdown('### 성격 특징')
         for number, trait in enumerate(reading['personality'], 1):
             st.markdown(f'<div class="personality-line"><span>{number:02d}</span><p>{escape(trait)}</p></div>', unsafe_allow_html=True)
         scene, friend = st.columns(2, gap='large')
         with scene:
-            st.markdown('#### 술자리에서 들키는 순간')
+            st.markdown('#### 술자리에서의 모습')
             st.write(reading['scene'])
         with friend:
-            st.markdown('#### 잘 맞는 술친구')
+            st.markdown('#### 잘 맞는 친구 유형')
             st.write(reading['companion'])
         with st.expander('MBTI와 사주로 풀어본 캐릭터'):
-            st.markdown(f"**{persona['mbti']}에서 읽은 너**")
+            st.markdown(f"**{persona['mbti']} 성격 해석**")
             st.write(reading['mbti_reading'])
             st.markdown('**사주에서 가져온 모티브**')
             st.write(reading['saju_reading'])
@@ -252,7 +251,7 @@ def results():
         section_label('YOUR CHARACTER')
         st.title(persona['title'])
         st.write(persona['description'])
-        st.info('네 캐릭터와 연결할 근거를 충분히 찾지 못했어. 다시 시도하거나 도감에서 한 잔을 골라봐.' if api_ready() else '성격 카드는 먼저 열어봤어요. 술 추천은 잠시 준비 중이니 도감에서 한 잔을 골라보세요.')
+        st.info('추천 근거를 충분히 찾지 못했습니다. 다시 시도하거나 도감에서 선택해주세요.' if api_ready() else '성격 해석만 표시됩니다. AI 연결 설정을 확인해주세요.')
         if st.button('다시 찾아보기', type='primary', width='stretch'):
             step(2)
         st.button('술 도감 둘러보기', on_click=navigate, args=('catalog',), width='stretch')
@@ -262,11 +261,11 @@ def results():
     reading = main.get('reading', {})
     title = reading.get('type_name', persona['title'])
     tagline = reading.get('tagline', persona['description'])
-    st.markdown(f'''<div class="result-hero"><div class="eyebrow">YOUR DRINK PERSONA · {escape(persona['mbti'])}</div>
-    <div class="result-type">너는 <b>{escape(title)}</b></div><h1>{escape(main['item']['name'])}</h1>
-    <p>{escape(tagline)}</p><div class="result-tag">{escape(category_label(main['item']['category']))} &nbsp; / &nbsp; 네 성격을 닮은 한 잔</div></div>''', unsafe_allow_html=True)
+    st.markdown(f'''<div class="result-hero"><div class="eyebrow">추천 결과 · {escape(persona['mbti'])}</div>
+    <div class="result-type"><b>{escape(title)}</b></div><h1>{escape(main['item']['name'])}</h1>
+    <p>{escape(tagline)}</p><div class="result-tag">{escape(category_label(main['item']['category']))} &nbsp; / &nbsp; 성격과 연결한 추천</div></div>''', unsafe_allow_html=True)
     if reading:
-        st.markdown(f'<div class="roast"><span>친구한테 들키면 끝</span><p>“{escape(reading["roast"])}”</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="roast"><span>한 줄 요약</span><p>“{escape(reading["roast"])}”</p></div>', unsafe_allow_html=True)
     share = f"🥃 술 팔자\n{persona['mbti']} · {title}\n나의 술: {main['item']['name']}\n{tagline}\n{reading.get('roast', '')}\nMBTI·사주를 소재로 한 재미용 캐릭터 해석"
     a, b, c = st.columns(3)
     with a:
@@ -274,15 +273,14 @@ def results():
     with b:
         st.button('이 술에게 물어보기 →', on_click=open_chat, args=(main['item']['id'],), width='stretch', type='primary')
     with c:
-        if st.button('다시 까보기 ↻', width='stretch'):
+        if st.button('다시 시작 ↻', width='stretch'):
             step(1)
     st.caption('MBTI·사주는 재미용 캐릭터 해석입니다. 실제 술 정보는 아래 원문 근거에서 확인하세요.')
     st.divider()
     reading_body(main, persona)
     if len(picks) > 1:
         st.divider()
-        section_label('YOUR OTHER SIDES')
-        st.subheader('너에게 이런 면도 있더라.')
+        st.subheader('추가 추천')
         for pick in picks[1:]:
             other = pick.get('reading', {})
             with st.expander(f"{pick['item']['name']} · {other.get('type_name', '또 다른 한 잔')}"):
@@ -356,7 +354,7 @@ def chat():
                 status.update(label='답변을 찾았어요.', state='complete')
             st.rerun()
         except Exception:
-            st.error('답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요.')
+            st.error('답변을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.')
 
 
 def admin():

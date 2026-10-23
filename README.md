@@ -1,6 +1,6 @@
 # 술 팔자
 
-MBTI·사주를 소재로 한 재미용 주류 추천 Streamlit 앱.
+MBTI와 사주로 성격과 닮은 술을 찾습니다. 성향 해석부터 술의 특징까지 확인해보세요.
 
 실행: `streamlit run app.py`
 

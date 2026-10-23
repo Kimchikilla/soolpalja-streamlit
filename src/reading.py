@@ -5,6 +5,11 @@ from .settings import model
 from .saju import retrieve_references
 
 
+class SajuStory(BaseModel):
+    title: str
+    body: str
+
+
 class DrinkReading(BaseModel):
     item_id: str
     type_name: str
@@ -16,6 +21,7 @@ class DrinkReading(BaseModel):
     scene: str
     roast: str
     companion: str
+    saju_story: list[SajuStory] = Field(default_factory=list)
 
 
 class Readings(BaseModel):
@@ -51,6 +57,9 @@ def attach_readings(result, persona, *, on_progress=None):
         on_progress('writing', f'사주 참고 자료 {len(references)}개 확인 완료. 술의 특징과 성격을 연결 중입니다.', {})
     saju = persona.get('saju', {})
     aggregate = {key: saju[key] for key in ['element_counts', 'yin_yang', 'dominant_elements', 'known_birth_time'] if key in saju}
+    if saju.get('day_master'):
+        aggregate['day_master_motif'] = {key: saju['day_master'][key] for key in ['element', 'polarity', 'image', 'motif']}
+        aggregate['ten_god_motifs'] = list(dict.fromkeys(row['천간 십신'] for row in saju['pillar_details'] if row['천간 십신'] != '日主'))
     lenses = ['취향과 판단: 내 기준, 고집, 선택의 방식. 상황은 메뉴를 고르는 순간.',
               '관계와 거리: 첫인상과 친해진 뒤의 반전. 상황은 모르는 사람과 친구가 섞인 테이블.',
               '숨은 장난기와 허점: 평소 이미지가 깨지는 순간. 상황은 귀가 직전 단톡방과 다음 약속.']
@@ -65,6 +74,7 @@ type_name: 실제 성격이 바로 읽히는 자연스러운 유형명. 예: '�
 tagline: 주요 성격 특징을 압축한 짧은 한 줄. 과장이나 과도한 칭찬은 제외한다. personality: 구체적인 행동 성격 3개(각 1~2문장), 겉모습과 속마음의 차이 포함.
 mbti_reading: 입력 MBTI 네 지표가 어떤 행동 캐릭터로 연결되는지 2~3문장. 사주와 섞지 말 것.
 saju_reading: 입력 일간 오행을 어떤 캐릭터 모티브로 썼는지 2문장. 부족한 기운, 건강 효과, 주량, 운명에 대한 주장은 금지.
+saju_story: 첫 번째 술에는 반드시 4개, 나머지 술에는 2개의 title/body 문단을 작성한다. 첫 번째의 네 주제는 ①일간 이미지와 MBTI가 만나 생기는 겉과 속의 차이 ②오행·음양의 표면 집계에서 가져온 서로 충돌하는 성향 ③관계에서 반복되는 고집·자존심·주도권의 허점 ④사주 모티브와 해당 술의 확인된 제조·재료 특징의 연결이다. 각 body는 3문장, 110~180자다. 추상적인 칭찬으로 끝내지 말고 실제 행동과 모순을 찌르는 관찰을 담는다. 예를 들어 거절은 안 하지만 다음 약속에서 조용히 빠지는 행동, 자유롭다고 하면서 남의 결정은 검토하는 행동처럼 구체적인 장면을 쓴다. 예시는 복사하지 않는다. 담백한 문체를 유지하되 내용은 예리하고 흥미롭게 작성한다. 억지 직업명과 조롱 없이 읽을거리를 제공한다. 입력에 있는 일간 이미지·모티브, 표면 오행/음양 수치 중 최소 2종류를 직접 언급하고 MBTI와 연결한다. 수치를 신강·신약·부족한 기운의 진단으로 해석하지 않는다. 일간·십신은 전통 개념에서 빌린 창작 소재라고 표현한다. 미래 사건, 재물운, 건강, 실제 인격을 예언하거나 사실처럼 단정하지 않는다. 각 문단은 다른 장면이어야 하고 기존 personality/scene 문장을 반복하지 않는다. '설정입니다/모티브입니다'를 매 문장 반복하지 말고 해석의 성격을 한 번 밝힌 후 구체적인 행동을 풀어 쓴다.
 connection: 3~4문장의 자연스러운 문단. 화살표 나열 금지. 입력 설명에 실제로 나온 재료·원료·숙성·제조법·스타일의 구체적인 특징을 1~2개 이상 직접 언급하고 행동 성격과 연결하라. 단일 주류에는 없는 칵테일 재료를 억지로 만들지 않는다. '복잡한 조합', '깊은 조화', '잘 어울린다'만으로 때우지 않는다. 확인되지 않은 맛·도수·성분은 추가하지 않는다. 비유임을 드러낸다. 브랜드는 개별 제품의 연산·도수가 다르므로 일반화하지 않는다.
 scene: 성격이 드러나는 구체적인 술자리 행동을 2문장으로 작성한다. roast: 성격의 모순이나 특징을 관찰한 한 줄 요약, 35~80자. 반말, 질문, 빈정거림, 조롱, 감탄사, “너는/네가/너의/당신은/당신의” 같은 직접 호칭은 금지한다. 예: “선택은 빠르지만, 기준에 맞는 후보를 검토하는 데는 시간이 걸립니다.” 예시 복사 금지. companion: 잘 맞는 친구의 성향과 이유 1문장.
 모든 설명 문장은 '-합니다/-입니다' 형태로 통일한다. type_name과 tagline은 간결한 명사구도 가능하다. '말해줄게/들켰다/본성을 까준다/이 술이 바로 너' 같은 대화체·예능체 표현은 쓰지 않는다. 성적 비하·혐오·정신질환 진단·과음 권유는 금지한다. 추상적인 미사여구 대신 메뉴 선택, 답장, 정산, 귀가 준비처럼 실제 상황에서 관찰할 수 있는 행동을 묘사한다. personality 3개는 서로 다른 특징이어야 하며 같은 문장을 반복하지 않는다. MBTI·오행만으로 실제 인격을 안다고 주장하지 않는다.
@@ -135,10 +145,32 @@ scene: 성격이 드러나는 구체적인 술자리 행동을 2문장으로 작
     return result
 
 
+def saju_story_for_display(reading, persona):
+    """Keep older result sessions readable without another model call."""
+    if reading.get('saju_story'):
+        return reading['saju_story']
+    saju = persona.get('saju', {})
+    master = saju.get('day_master', {})
+    image = master.get('image', MOTIFS[persona['element']][0])
+    motif = master.get('motif', MOTIFS[persona['element']][1])
+    counts = saju.get('element_counts', {})
+    distribution = ' · '.join(f'{key} {value}' for key, value in counts.items())
+    return [
+        {'title': '겉으로 보이는 태도와 선택의 기준', 'body': f'일간 {persona["element"]}의 이미지인 ‘{image}’와 {motif}를 성격 해석의 소재로 사용했습니다. {persona["mbti"]}의 행동 설정과 연결하면, 취향이 없는 것과 취향을 먼저 말하지 않는 것은 다른 문제입니다. 선택을 맡겨놓고도 결과를 확인하는 순간에는 본인의 기준이 드러나는 장면으로 해석할 수 있습니다.'},
+        {'title': '자유롭게 선택해도 남는 기준', 'body': f'표면 오행 집계는 {distribution or "출생 정보에 따른 오행 분포"}입니다. 이 집계는 기운의 강약 판정이 아니라 서로 다른 성향을 대비하는 소재입니다. 분위기에 맞추는 태도와 양보하지 않는 기준이 공존하는 모습으로 읽을 수 있으며, 늘 유연한 사람이라고만 설명하지 않습니다.'},
+        {'title': '관계에서 드러나는 고집', 'body': f'{persona["mbti"]}의 관계 설정과 일간의 이미지를 함께 보면, 의견을 말하는 방식과 실제로 원하는 방향이 일치하지 않는 장면을 살펴볼 수 있습니다. 반대하지 않았다는 이유만으로 동의했다고 보기는 어렵습니다. 친한 사람 앞에서 선택 기준이나 거리 두는 방식이 어떻게 바뀌는지가 해석의 관찰 지점입니다.'},
+        {'title': '술의 특징과 연결한 해석', 'body': reading.get('connection', '술의 원료와 제조법은 아래 원문 근거에서 확인할 수 있습니다.')},
+    ]
+
+
 def clean_reading(reading):
     """Also clean older session results when deployment reruns the UI."""
     banned = ['메뉴판 검열관', '메뉴판검열관', '검열관', '잠복수사관', '수사관', '면접관', '심사위원', '판사', '주최자']
     def clean(text):
+        if isinstance(text, dict):
+            return {key: clean(value) for key, value in text.items()}
+        if isinstance(text, list):
+            return [clean(value) for value in text]
         if not isinstance(text, str):
             return text
         for term in banned:

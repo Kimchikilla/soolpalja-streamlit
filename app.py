@@ -9,7 +9,7 @@ from src.catalog import load_catalog, load_documents, category_label
 from src.persona import create_persona, LunarDate
 from src.settings import api_ready
 
-st.set_page_config(page_title='술 팔자 · MBTI·사주 기반 주류 추천', page_icon='🥃', layout='wide', initial_sidebar_state='collapsed')
+st.set_page_config(page_title='술 팔자 | MBTI·사주로 찾는 나만의 술', page_icon=str(Path(__file__).parent / 'assets/icon.png'), layout='wide', initial_sidebar_state='collapsed')
 st.markdown(f'<style>{(Path(__file__).parent / "assets/app.css").read_text(encoding="utf-8")}</style>', unsafe_allow_html=True)
 items, documents = load_catalog(), load_documents()
 lookup = {x['id']: x for x in items}
@@ -211,6 +211,12 @@ def reading_body(pick, persona):
     if reading:
         st.subheader('추천 이유')
         st.write(reading['connection'])
+        st.subheader('사주로 보는 성향')
+        st.caption('일간·오행·음양을 소재로 한 재미용 해석입니다.')
+        from src.reading import saju_story_for_display
+        for story in saju_story_for_display(reading, persona):
+            st.markdown(f"#### {story['title']}")
+            st.write(story['body'])
         st.markdown('### 성격 특징')
         for number, trait in enumerate(reading['personality'], 1):
             st.markdown(f'<div class="personality-line"><span>{number:02d}</span><p>{escape(trait)}</p></div>', unsafe_allow_html=True)

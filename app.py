@@ -178,9 +178,9 @@ def searching():
                 if 'profile_report' not in state:
                     state['profile_report'] = analyze_persona(state['persona'], on_progress=report)
                 from src.recommend import recommend
-                from src.reading import attach_readings
+                from src.profile_reading import attach_recommendation_reasons
                 result = recommend('', persona={**state['persona'], 'description': state['profile_report']['summary']}, category=None, on_progress=report)
-                state['recommendations'] = attach_readings(result, state['persona'], on_progress=report, profile_report=state['profile_report'])
+                state['recommendations'] = attach_recommendation_reasons(result, state['profile_report'], on_progress=report)
                 state['recommendations']['profile_report'] = state['profile_report']
                 state['recommendations']['search_timeline'] = timeline
                 live_draft.empty()
@@ -215,9 +215,15 @@ def reading_body(pick, persona):
     reading = pick.get('reading')
     if reading:
         st.subheader('추천 이유')
+        if reading.get('profile_basis'):
+            st.caption('분석에서 가져온 기준')
+            st.write(reading['profile_basis'])
         st.write(reading['connection'])
     with st.expander('이 술의 실제 특징과 추천 근거'):
         st.write(pick['reason'])
+        if reading and reading.get('source_fact'):
+            st.caption('추천에 사용한 원문 구절')
+            st.write(reading['source_fact'])
         show_sources(pick['sources'])
 
 

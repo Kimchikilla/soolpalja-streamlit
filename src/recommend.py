@@ -114,7 +114,7 @@ def recommend(conditions, diagnostics=None, *, persona=None, category=None, on_p
                 'proof_documents': [{'number': p.evidence_number, 'item_id': evidence[p.evidence_number - 1].metadata['item_id'], 'text': evidence[p.evidence_number - 1].page_content} for p in pick.checks if 1 <= p.evidence_number <= len(evidence)]})
         if pick.item_id in ids and pick.item_id not in seen and used and valid and any(x['source_type'] == 'Wikipedia' for x in used) and all(x['item_id'] == pick.item_id for x in used):
             seen.add(pick.item_id)
-            output.append({'item': lookup[pick.item_id], 'reason': pick.reason, 'sources': used})
+            output.append({'item': lookup[pick.item_id], 'reason': pick.reason, 'sources': used, 'verified_facts': list(dict.fromkeys(proof.quote for proof in pick.checks))})
     if default_recommendation and not output:
         # No taste constraints: show traceable catalogue introductions even if the
         # model's citation formatting fails; never silently return an empty screen.
@@ -123,7 +123,7 @@ def recommend(conditions, diagnostics=None, *, persona=None, category=None, on_p
             if numbered:
                 number, document = numbered
                 excerpt = document.page_content.split('\n')[0]
-                output.append({'item': item, 'reason': f'취향 제한 없이 고른 기본 도감 추천입니다. 원문 소개: {excerpt} [근거 {number}]', 'sources': [{'number': number, **document.metadata}]})
+                output.append({'item': item, 'reason': f'취향 제한 없이 고른 기본 도감 추천입니다. 원문 소개: {excerpt} [근거 {number}]', 'sources': [{'number': number, **document.metadata}], 'verified_facts': [excerpt]})
     message = '문서로 모든 조건을 확인한 후보입니다.' if output else '수집한 근거에서 모든 조건 충족을 확인한 후보가 없습니다.'
     if default_recommendation:
         message = 'MBTI·오행 캐릭터를 문서에 확인된 술의 특징과 연결했습니다.' if persona else '취향을 입력하지 않아 대표 칵테일을 소개합니다.'

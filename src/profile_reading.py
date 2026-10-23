@@ -37,3 +37,43 @@ summary: 종합 성향을 2문장으로 압축한다. 단정적인 취향 추측
         ('human', json.dumps(profile_facts(persona), ensure_ascii=False)),
     ])
     return response.model_dump()
+
+
+class RecommendationReason(BaseModel):
+    item_id: str
+    profile_basis: str
+    source_fact: str
+    reason: str
+
+
+class RecommendationReasons(BaseModel):
+    recommendations: list[RecommendationReason]
+
+
+def attach_recommendation_reasons(result, profile_report, *, on_progress=None):
+    if not result['picks']:
+        return result
+    if on_progress:
+        on_progress('writing', '확정된 성향과 검증된 술 정보를 비교 중입니다.', {})
+    profile_text = '\n'.join(profile_report.values())
+    drinks = [{'item_id': pick['item']['id'], 'name': pick['item']['name'], 'verified_facts': pick.get('verified_facts') or [pick['reason']]} for pick in result['picks']]
+    response = model().with_structured_output(RecommendationReasons).invoke([
+        ('system', """이미 확정된 성향 분석과 원문에서 검증한 주류 특징을 비교해 추천 이유만 작성한다. 성향 분석을 다시 쓰거나 특정 술에 맞춰 새 성격을 만들지 않는다.
+profile_basis는 입력 분석에서 15자 이상을 정확히 복사한다. source_fact는 해당 술의 verified_facts에서 한 항목을 정확히 복사한다. reason은 2~3문장으로 profile_basis의 구체적인 선택·관계·결정 성향과 원문 특징이 어떤 추천 기준에서 만나는지 설명한다. 원문에 없는 재료·맛·비율·숙성·도수·효능은 추가하지 않는다. 술이 고집을 부린다거나 자신의 기준을 고수한다는 식으로 술을 의인화하지 않는다. '목이라 라임/수 부족이라 토닉/양이라 깔끔한 맛' 같은 오행과 성분의 가짜 대응은 금지한다. 사주·MBTI가 실제 입맛을 증명한다고 주장하지 않는다. 공통점이 약하면 솔직히 성향을 참고한 탐색 후보이며 실제 취향 확인이 필요하다고 쓴다. 약한 연결을 억지로 설명하는 것보다 정확한 구분이 우선이다. 원문 인용문에 담긴 사실만 사용하고 비유를 사실처럼 단정하지 않는다. '-합니다/-입니다'로 담백하게 쓴다. 모든 입력 item_id에 한 번씩 작성한다."""),
+        ('human', json.dumps({'independent_analysis': profile_report, 'drinks': drinks}, ensure_ascii=False)),
+    ])
+    mapped = {r.item_id: r for r in response.recommendations}
+    for pick, context in zip(result['picks'], drinks):
+        reason = mapped.get(pick['item']['id'])
+        if reason and len(reason.profile_basis.strip()) >= 15 and reason.profile_basis in profile_text and reason.source_fact in context['verified_facts']:
+            text = reason.reason
+            source_fact = reason.source_fact
+            basis = reason.profile_basis
+        else:
+            text = '성향 분석을 참고해 원문에서 특징을 확인한 후보입니다. 성격만으로 실제 맛의 선호를 판단하지 않으며, 아래 주류 정보를 함께 확인할 수 있습니다.'
+            source_fact = context['verified_facts'][0]
+            basis = profile_report['summary']
+        pick['reading'] = {'type_name': '사주·MBTI 기반 추천', 'tagline': '분석한 성향을 기준으로 검토한 추천입니다.', 'connection': text, 'profile_basis': basis, 'source_fact': source_fact}
+        if on_progress:
+            on_progress('character', f"{pick['item']['name']} 추천 이유 확인 완료", {})
+    return result

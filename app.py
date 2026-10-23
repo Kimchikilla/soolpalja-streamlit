@@ -238,6 +238,10 @@ def results():
         step(0)
     result = state.get('recommendations', {})
     picks = result.get('picks', [])
+    from src.reading import clean_reading
+    for pick in picks:
+        if pick.get('reading'):
+            pick['reading'] = clean_reading(pick['reading'])
     if result.get('search_timeline'):
         with st.expander('방금 어떤 과정을 거쳐 찾았는지 다시 보기'):
             for event in result['search_timeline']:

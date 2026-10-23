@@ -61,7 +61,7 @@ def attach_readings(result, persona, *, on_progress=None):
         ('system', '''너는 '술 팔자'의 독한 예능 작가다. 사용자는 자기 성격을 신랄하고 웃기게 까달라고 요청했다. 결과는 친구가 캡처해서 단톡방에 보내고 싶을 만큼 구체적이고 도발적으로 쓴다. 각 술을 하나의 사람처럼 해석하고 사용자와 연결한다.
 입력 프로필과 술의 문서 기반 특징을 함께 사용해 한국어 캐릭터 리딩을 작성한다. MBTI·오행은 과학적 성격 진단이나 운명 예측이 아닌 재미용 창작 설정이다.
 모든 술에 똑같은 성격을 붙이지 말고 각 술의 확인된 구성/대비/유래가 다른 만큼 서로 다른 성격과 장면을 만든다.
-type_name: 8~20자 정도의 행동 폭로형 별명. 예: '아무거나라며 메뉴판 검열관', '읽씹해놓고 단톡방 잠복수사관', '집 간다며 앙코르 주최자'. 예시를 복사하지 말고 해당 술과 프로필에서 새로 만든다.
+type_name: 실제 성격이 바로 읽히는 자연스러운 유형명. 예: '조용한데 취향 확실한 타입', '친해지면 말 많아지는 타입', '계획대로 해야 편한 타입'. 술의 특징과 사용자 행동을 연결해 새로 만든다. 메뉴판 검열관·수사관·심사위원·면접관·판사·주최자처럼 억지로 만든 직업명이나 수사 비유는 모든 필드에서 금지한다. 메뉴판이 아니라 사용자 성격이 주어여야 한다.
 tagline: 겉으로 하는 말과 실제 행동이 충돌하는 짧은 한 줄. 칭찬으로 수습하지 마라. personality: 구체적인 행동 성격 3개(각 1~2문장), 겉모습과 속마음의 차이 포함.
 mbti_reading: 입력 MBTI 네 지표가 어떤 행동 캐릭터로 연결되는지 2~3문장. 사주와 섞지 말 것.
 saju_reading: 입력 일간 오행을 어떤 캐릭터 모티브로 썼는지 2문장. 부족한 기운, 건강 효과, 주량, 운명에 대한 주장은 금지.
@@ -127,9 +127,25 @@ scene: 이 캐릭터가 드러나는 구체적인 술자리 장면 2문장. roas
         # Keep the drink-specific scene and punchline written by the model.
         if not all(reading[key].strip() for key in ['type_name', 'tagline', 'connection', 'scene', 'roast', 'companion']):
             raise ValueError('술별 캐릭터 문구가 비어 있습니다.')
+        reading = clean_reading(reading)
         pick['reading'] = reading
         if on_progress:
             on_progress('character', f"{pick['item']['name']} · {reading['type_name']} 완성", {'roast': reading['roast']})
     unique_sources = {d.metadata['source_url']: d.metadata for d in references}
     result['saju_sources'] = list(unique_sources.values())
+    return result
+
+
+def clean_reading(reading):
+    """Also clean older session results when deployment reruns the UI."""
+    banned = ['메뉴판 검열관', '메뉴판검열관', '검열관', '잠복수사관', '수사관', '면접관', '심사위원', '판사', '주최자']
+    def clean(text):
+        if not isinstance(text, str):
+            return text
+        for term in banned:
+            text = text.replace(term, '취향이 확실한 사람')
+        return text
+    result = {key: [clean(x) for x in value] if isinstance(value, list) else clean(value) for key, value in reading.items()}
+    if any(term in reading.get('type_name', '') for term in banned):
+        result['type_name'] = '취향 확실하고 고집 있는 타입'
     return result

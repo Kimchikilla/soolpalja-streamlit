@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "scope": "Traditional stem/branch correspondences plus original entertainment motifs. Motifs are authored, not extracted personality facts.",
+  "source_urls": ["https://ko.wikipedia.org/wiki/천간", "https://ko.wikipedia.org/wiki/지지", "https://ko.wikipedia.org/wiki/오행", "https://github.com/6tail/lunar-python"],
+  "count_method": "One element per visible heavenly stem and earthly branch. 8 characters when birth time is known, 6 otherwise. No hidden-stem weights, seasonal weighting, useful-god or strength judgement.",
+  "stems": {
+    "甲": {"name": "갑", "element": "목", "polarity": "양", "image": "큰 나무", "motif": "한번 세운 기준을 쉽게 접지 않는 추진 캐릭터"},
+    "乙": {"name": "을", "element": "목", "polarity": "음", "image": "덩굴과 풀", "motif": "상황에 맞춰 길을 찾는 유연한 관계 캐릭터"},
+    "丙": {"name": "병", "element": "화", "polarity": "양", "image": "태양", "motif": "숨기기보다 먼저 드러내는 존재감 캐릭터"},
+    "丁": {"name": "정", "element": "화", "polarity": "음", "image": "작은 등불", "motif": "가까운 사람에게 오래 집중하는 몰입 캐릭터"},
+    "戊": {"name": "무", "element": "토", "polarity": "양", "image": "산과 큰 땅", "motif": "분위기가 흔들려도 자리를 지키는 중심 캐릭터"},
+    "己": {"name": "기", "element": "토", "polarity": "음", "image": "가꾸는 밭", "motif": "작은 디테일을 챙겨 판을 완성하는 관리 캐릭터"},
+    "庚": {"name": "경", "element": "금", "polarity": "양", "image": "단단한 쇠", "motif": "고민을 짧게 잘라 결론부터 내는 직진 캐릭터"},
+    "辛": {"name": "신", "element": "금", "polarity": "음", "image": "다듬은 보석", "motif": "자기 취향의 작은 차이를 알아보는 정교한 캐릭터"},
+    "壬": {"name": "임", "element": "수", "polarity": "양", "image": "큰 강과 바다", "motif": "서로 다른 이야기를 한 판으로 엮는 확장 캐릭터"},
+    "癸": {"name": "계", "element": "수", "polarity": "음", "image": "비와 이슬", "motif": "말보다 표정의 작은 변화를 먼저 읽는 관찰 캐릭터"}
+  },
+  "branches": {
+    "子": {"name": "자", "element": "수", "polarity": "양"},
+    "丑": {"name": "축", "element": "토", "polarity": "음"},
+    "寅": {"name": "인", "element": "목", "polarity": "양"},
+    "卯": {"name": "묘", "element": "목", "polarity": "음"},
+    "辰": {"name": "진", "element": "토", "polarity": "양"},
+    "巳": {"name": "사", "element": "화", "polarity": "음"},
+    "午": {"name": "오", "element": "화", "polarity": "양"},
+    "未": {"name": "미", "element": "토", "polarity": "음"},
+    "申": {"name": "신", "element": "금", "polarity": "양"},
+    "酉": {"name": "유", "element": "금", "polarity": "음"},
+    "戌": {"name": "술", "element": "토", "polarity": "양"},
+    "亥": {"name": "해", "element": "수", "polarity": "음"}
+  },
+  "ten_gods": {"比肩": "비견", "劫财": "겁재", "食神": "식신", "伤官": "상관", "偏财": "편재", "正财": "정재", "七杀": "편관", "正官": "정관", "偏印": "편인", "正印": "정인", "日主": "일주 자신"}
+}

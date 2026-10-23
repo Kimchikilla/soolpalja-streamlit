@@ -1,0 +1,10 @@
+{
+  "chunk_size": 1000,
+  "chunk_overlap": 200,
+  "top_k": 5,
+  "search_type": "similarity",
+  "fetch_k": 20,
+  "collection_meta": "alcohol_meta",
+  "collection_docs": "alcohol_docs",
+  "collection_saju": "saju_reference"
+}

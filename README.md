@@ -1,0 +1,7 @@
+# 술 팔자
+
+MBTI·사주를 소재로 한 재미용 주류 추천 Streamlit 앱.
+
+실행: `streamlit run app.py`
+
+주류 330개, 설명 문서 청크 1018개, 사주 참고 문서 청크 154개를 공개 자료에서 수집했다. 메타데이터는 Wikidata CC0, 문서는 Wikipedia contributors CC BY-SA 4.0이며 각 항목에 원문과 리비전·라이선스가 포함된다. 배포 번들은 사용자 입력이나 API 키를 포함하지 않는다.

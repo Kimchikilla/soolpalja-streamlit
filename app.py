@@ -215,12 +215,12 @@ def reading_body(pick, persona):
     reading = pick.get('reading')
     if reading:
         st.subheader('추천 이유')
-        if reading.get('profile_basis'):
-            st.caption('분석에서 가져온 기준')
-            st.write(reading['profile_basis'])
         st.write(reading['connection'])
     with st.expander('이 술의 실제 특징과 추천 근거'):
         st.write(pick['reason'])
+        if reading and reading.get('profile_basis'):
+            st.caption('추천에 사용한 성향 분석')
+            st.write(reading['profile_basis'])
         if reading and reading.get('source_fact'):
             st.caption('추천에 사용한 원문 구절')
             st.write(reading['source_fact'])
